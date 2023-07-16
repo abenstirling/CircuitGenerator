@@ -13,15 +13,15 @@ def receiveList():
 
     # Read the list elements one by one
     for _ in range(list_size):
-        # Read a floating-point number from the serial port
+        # Read an integer from the serial port
         data_str = ser.readline().decode().strip()
 
-        # Safely convert the string to a float
+        # Safely convert the string to an integer
         try:
-            received_value = float(data_str)
+            received_value = int(data_str)
             received_data.append(received_value)
         except ValueError:
-            print("Failed to parse received data as a float:", data_str)
+            print("Failed to parse received data as an integer:", data_str)
 
     return received_data
 
