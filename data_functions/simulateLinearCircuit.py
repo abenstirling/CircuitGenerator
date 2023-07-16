@@ -56,12 +56,12 @@ def getComponentFrom2Matrix(x,a):
             L = temp2
             C = 0;
         elif(temp2 < 0):
-            C = -1/temp2
+            C = -temp2
             L = np.inf
     return [R, C, L]
 
 def get2MatrixFromComponent(component,a):
-    # component is (R,C,L) in units of kOhm, uF, uH
+    # component is (R,C,L) in units of kOhm, nF, nH
     R = component[0]
     C = component[1]
     L = component[2]
@@ -71,8 +71,8 @@ def get2MatrixFromComponent(component,a):
     if(R == np.inf):
         x1 = 1
     else:
-        temp1 = np.exp(R/a)
-        x1 = (temp1-1)/(temp1+1)
+        temp1 = np.exp(-R/a)
+        x1 = -(temp1-1)/(temp1+1)
     temp2 = 0
     if(C == 0 and L == np.inf):
         x2 = 1;
@@ -80,7 +80,7 @@ def get2MatrixFromComponent(component,a):
         if(C == 0 and L != np.inf):
             temp2 = L
         elif(C != 0 and L == np.inf):
-            temp2 = -1/C
+            temp2 = -C
         x2 = 1/(1+np.exp(-temp2/a))
     return [x1, x2]
 
@@ -105,16 +105,17 @@ def generateNetlistFromCompMatrix(X):
                 netlist += f"{component_name} {node1} {node2} {R}\n"
             if(C != 0):
                 component_name = f'C{i+1}{j+1}'
-                netlist += f"{component_name} {node1} {node2} {C*1e-6} 0 \n"
+                netlist += f"{component_name} {node1} {node2} {C*1e-9} 0 \n"
             if(L != np.inf):
                 component_name = f'L{i+1}{j+1}'
-                netlist += f"{component_name} {node1} {node2} {L*1e-6} 0 \n"
+                netlist += f"{component_name} {node1} {node2} {L*1e-9} 0 \n"
 
     # add step voltage source
     netlist += f"V1 N1 0 step 1\n"
     #netlist += f"R0 N3 0 0"
 
-    print(netlist)
+    #print(netlist)
+    print('.')
     return netlist
 
 def simulateStepResponse(netlist, duration=1, time_step = 0.001):

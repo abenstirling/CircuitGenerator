@@ -1,7 +1,7 @@
 import numpy as np
 from itertools import product
 
-def gen_RCL_matrix(i, n=4, r_min=1, r_max=10000, l_min=1, l_max=10000, c_min=1, c_max=10000):
+def gen_RCL_matrix(i, n=4, r_min=1, r_max=1000, l_min=1, l_max=1000, c_min=1, c_max=1000):
     '''
     compont matrix [n x n x 3]
     permute all combinations of n elements in the graph
@@ -48,7 +48,7 @@ def gen_RCL_matrix(i, n=4, r_min=1, r_max=10000, l_min=1, l_max=10000, c_min=1, 
             #print(vals.shape)
             RCL_arr[i,:] = vals
         elif components == 3:
-            vals = np.array([r_open, c_open, np.random.uniform()])
+            vals = np.array([r_open, c_open, np.random.uniform(l_min,l_max)])
             RCL_arr[i,:] = vals
         elif components == 4:
             vals = np.array([np.random.uniform(r_min,r_max), np.random.uniform(c_min,c_max), l_open])
