@@ -2,6 +2,7 @@
 #include <driver/timer.h>
 
 #define ADC_PIN 34
+#define FUNCTION_PIN 32
 #define SAMPLE_RATE 2000 // Sample rate in Hz
 #define SAMPLES_PER_CYCLE 1024 // Number of samples in a full cycle
 
@@ -9,9 +10,10 @@ volatile int IRAM_ATTR samples[SAMPLES_PER_CYCLE]; // Array to store the samples
 volatile int IRAM_ATTR sampleCount = 0; // Number of samples taken so far
 
 void IRAM_ATTR onTimer(void* arg) {
+
   // Clear the interrupt status
   timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
-  
+
   // Take a sample
   int adc_value = analogRead(ADC_PIN);
   // Store the sample in the array
@@ -25,6 +27,7 @@ void IRAM_ATTR onTimer(void* arg) {
     sampleCount = 0;
   }
 
+  
   // Enable alarm again
   timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
 }
@@ -32,7 +35,7 @@ void IRAM_ATTR onTimer(void* arg) {
 void setup() {
   Serial.begin(115200);
   analogReadResolution(12); // Configure the resolution to 12 bits
-
+  pinMode(FUNCTION_PIN, OUTPUT);
   // Configure timer
   timer_config_t config = {
     .alarm_en = TIMER_ALARM_EN, // Enable timer alarm
@@ -62,12 +65,13 @@ void loop() {
   // Check if a full cycle has been sample
     
     if (sampleCount == 0) {
-      //Serial.println(69);
+      //Serial.println(6);
       // Send the samples over Serial
       //String data = "[";
       for (int i = 0; i < SAMPLES_PER_CYCLE; i++) {
-        int k = samples[i];
-        Serial.println(k);
+        //int k = samples[i];
+        
+        Serial.println(samples[i]);
         //data += String(samples[i]);
         //if (i < SAMPLES_PER_CYCLE - 1) {
         //  data += ", ";
