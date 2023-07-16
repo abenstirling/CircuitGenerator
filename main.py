@@ -30,14 +30,14 @@ from data_functions.generate_RCL_matrix import gen_RCL_matrix
 # print(len(sig_response))
 
 
-directory = "pickled_samples"
+directory = "pickled_X_y"
 if not os.path.exists(directory):
     os.makedirs(directory)
 
 
 
 
-def main(seed,n_samples=100):
+def main(seed,n_samples=200):
     np.random.seed(seed)
 
     start_time = time.time()
@@ -65,11 +65,11 @@ def main(seed,n_samples=100):
         # print(f"comp_reverse: {component_matrix_reverse}")
         # print(f"comp: {component_matrix}")
 
-        file_path = os.path.join(directory, f"{i+seed}.pkl")  # Specify the file path
+        file_path = os.path.join(directory, f"{i+seed}X.pkl")  # Specify the file path
         with open(file_path, "wb") as file:
             pickle.dump(sig_response, file)
 
-        file_path = os.path.join(directory, f"{i+seed}{i+seed}.pkl")  # Specify the file path
+        file_path = os.path.join(directory, f"{i+seed}y.pkl")  # Specify the file path
         with open(file_path, "wb") as file:
             pickle.dump(complex_matrix, file)
         print(i)
@@ -87,7 +87,7 @@ def main(seed,n_samples=100):
 # ---------------------------------------------------------------------------
 
 num_threads = 4
-start_seed = 500
+start_seed = 0
 
 # Start worker threads
 threads = []
