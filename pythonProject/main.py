@@ -1,6 +1,4 @@
 import serial
-import ast
-import time
 
 port = '/dev/cu.usbserial-0001'  # Update with the correct USB serial port name
 baud_rate = 115200
@@ -13,25 +11,22 @@ def receiveList():
     list_size = 1024
     print("List size:", list_size)
 
-    # Read the list as a string
-    data_str = ser.readline().decode().strip()
-    print("Received data:", data_str)
+    # Read the list elements one by one
+    for _ in range(list_size):
+        # Read an integer from the serial port
+        data_str = ser.readline().decode().strip()
 
-    # Safely evaluate the string as a list
-    try:
-        received_data = ast.literal_eval(data_str)
-    except (SyntaxError, ValueError):
-        print("Failed to parse received data as a list.")
+        # Safely convert the string to an integer
+        try:
+            received_value = int(data_str)
+            received_data.append(received_value)
+        except ValueError:
+            print("Failed to parse received data as an integer:", data_str)
 
     return received_data
 
 
-
-
-message = "true"
-
 ser = serial.Serial(port, baud_rate)
-ser.write(message.encode())
 received_list = receiveList()
 print("Received list:", received_list)
 
