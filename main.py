@@ -26,7 +26,7 @@ from data_functions.generate_RCL_matrix import gen_RCL_matrix
 
 def main(n_samples):
 
-    samples = np.array(n_samples,4,4,3)
+    samples = np.array((n_samples,4,4,3))
 
     start_time = time.time()
 
