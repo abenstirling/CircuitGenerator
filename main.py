@@ -87,7 +87,7 @@ def main(seed,n_samples=200):
 # ---------------------------------------------------------------------------
 
 num_threads = 4
-start_seed = 0
+start_seed = 2400
 n_samples = 200
 
 # Start worker threads
