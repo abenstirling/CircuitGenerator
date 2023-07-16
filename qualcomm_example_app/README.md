@@ -1,50 +1,48 @@
-![Screenshot](./images/logo-quic-on@h68.png)
+We were able to get a torch model, but becasue we were unable to run a VM in VM we weren't able to actually deploy our model to have the Qualcomm device be the main target. 
 
-# Qualcomm® Innovators Development Kit - QIDK
+Below is the code that we made to convert the model to a DLC file, but we were unable to test it. Given a native Ubuntu OS we could test within an hour. 
 
-Qualcomm® Innovators Development Kit (QIDK) provides sample applications to demonstrate the capability of Hardware Accelerators for AI, and Software AI stack.
+```import torch
 
-This repository contains sample android applications, which are designed to use components from the following products:
+```import torch
+import subprocess
 
-1. [Qualcomm® Neural Processing SDK for AI](https://developer.qualcomm.com/software/qualcomm-neural-processing-sdk)
-   Also referred to as SNPE
-2. [Qualcomm® AI Engine Direct SDK](https://developer.qualcomm.com/software/qualcomm-ai-engine-direct-sdk)
-   Also referred to as QNN
-3. [AI Model Efficiency Tool Kit (AIMET)](https://github.com/quic/aimet)
-4. [AIMET Model Zoo](https://github.com/quic/aimet-model-zoo)
+# Step 1: Convert PyTorch model to ONNX
+# Assuming you have already loaded and trained your PyTorch model
+model = MyModel()  # Replace with your own PyTorch model
 
-This Repository is divided into following categories
+# Set the model to evaluation mode
+model.eval()
 
-## Examples
+# Define a sample input tensor (adjust the shape and data type as per your model's input requirements)
+sample_input = torch.randn(1, 3, 128, 128)  # Example input shape for the super-resolution model
 
-Contain examples to use features of above SDKs
+# Export the model to ONNX format
+onnx_file_path = 'super_resolution.onnx'
+torch.onnx.export(model, sample_input, onnx_file_path, export_params=True,
+                  opset_version=11, do_constant_folding=True,
+                  input_names=['lr'], output_names=['sr'])
 
-|   Type    | SDK   |   Details   |   Link |
-|  :---:    |    :---:   |    :---:  |   :---:  |
-|  Model    | QNN - 2.10.40.4  |  Model - EnhancementGAN | [ReadMe](./Examples/QNN-Model-Example-EnhancementGAN/README.md) |
-|  Model    | QNN - 2.10.40.4  |  Model - SESR | [ReadMe](./Examples/QNN-Model-Example-SESR/README.md) |
+# Step 2: Convert ONNX model to DLC using AIMET-MODEL-ZOO
+aimet_model_zoo_path = '/path/to/aimet-model-zoo'  # Replace with the actual path to AIMET-MODEL-ZOO
 
-## Solutions
+# Change the working directory to the AIMET-MODEL-ZOO directory
+import os
+os.chdir(aimet_model_zoo_path)
 
-Contain end-to-end ready-to-run solutions
+# Modify inference.py to include ONNX export
+inference_py_path = os.path.join(aimet_model_zoo_path, 'zoo_torch', 'examples', 'superres', 'utils', 'inference.py')
+subprocess.call(['sed', '-i', 's/from aimet_torch.quantsim import QuantizationSimModel/#from aimet_torch.quantsim import QuantizationSimModel/', inference_py_path])
+subprocess.call(['sed', '-i', 's/from aimet_torch.qc_quantize_op import QuantScheme/#from aimet_torch.qc_quantize_op import QuantScheme/', inference_py_path])
 
-|   Type     | Solution   |   SDK   |   API   | Model   |   ReadMe |  Demo   |
-|  :---:     |    :---:   |    :---:  |    :---:  |    :---:  |   :---:  |  :---:  |
-|  NLP       | Question Answering       |  SNPE - 2.7 | Native API | Electra-small     |  [ReadMe](./Solutions/NLPSolution1-QuestionAnswering/README.md) |   [Demo](./Solutions/NLPSolution1-QuestionAnswering/README.md#qa-app-workflow)   |
-|  NLP       | Sentiment Analysis       |  SNPE - 2.7 | Native API | MobileBERT     |  [ReadMe](./Solutions/NLPSolution2-SentimentAnalysis/README.md)  |   [Demo](./Solutions/NLPSolution2-SentimentAnalysis/README.md#sa-app-workflow)   |
-|  Vision    | Object Detection       |  SNPE - 2.7 |   Java API  | Mobilenet SSD V2    | [ReadMe](./Solutions/VisionSolution1-ObjectDetection/README.md) |   [Demo](./Solutions/VisionSolution1-ObjectDetection/demo/ObjectDetection-Demo.gif)   |
-|  Vision    | Image Super Resolution       |SNPE - 2.7 |   Java API | SESR XL    | [ReadMe](./Solutions/VisionSolution2-ImageSuperResolution/README.md) |   [Demo](./Solutions/VisionSolution2-ImageSuperResolution/demo/VisionSolution2-ImageSuperResolution.gif)   |
-|  Vision    | Image Enhancement       |   SNPE - 2.7 |  Java API | EnhancedGAN    | [ReadMe](./Solutions/VisionSolution3-ImageEnhancement/README.md)  |   [Demo](./Solutions/VisionSolution3-ImageEnhancement/demo/VisionSolution3-ImageEnhancement.gif)   |
+# Run superres_quanteval.ipynb using jupyter notebook command (assuming you have jupyter notebook installed)
+notebook_path = os.path.join(aimet_model_zoo_path, 'zoo_torch', 'examples', 'superres', 'notebooks', 'superres_quanteval.ipynb')
+subprocess.call(['jupyter', 'notebook', notebook_path])
 
-## Tools
+# Step 3: Convert the ONNX model to DLC
+dlc_output_path = 'super_resolution_sesr_opt.dlc'
+subprocess.call(['snpe-onnx-to-dlc', '--input_network', 'super_resolution.onnx', '--output_path', dlc_output_path])
 
-Contain tools to simplify workflow
-
-|   Tool    | SDK   |   Details   |   Link |
-|  :---:    |    :---:   |    :---:  |   :---:  |
-|  PySNPE   | SNPE - 2.10  |  Python Interface to SNPE tools | [ReadMe](./Tools/pysnpe_utils/README.md) |
-|  snpe-docker    | SNPE - 2.10  |  Docker container for SNPE | [ReadMe](./Tools/snpe-docker/README.md) |
-
-Pls write to qidk@qti.qualcomm.com for any questions/suggestions
-
-###### *Qualcomm Neural Processing SDK, and Qualcomm Innovators Development Kit are products of Qualcomm Technologies, Inc. and/or its subsidiaries. AIMET is a product of Qualcomm Innovation Center, Inc.*
+# Step 4: Package the DLC in the desired location
+# Move the generated DLC to your desired location, e.g., in the application/src/<package_name>/assets folder
+```
