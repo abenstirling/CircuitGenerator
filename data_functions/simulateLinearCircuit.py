@@ -1,59 +1,63 @@
 import lcapy as lc
 import matplotlib.pyplot as plt
-import numpy as npy
+import numpy as np
 
 
 
-def simulateCircuitMatrix(componentMatrix, tStop, time_step):
+def simulateCircuitMatrix(componentMatrix, t_stop, dt):
     # component matrix is n x n x 3 of [R, C, L]
     # tStop is stop time in seconds
     # sample rate is dt in seconds
     # returns n x 1 array of voltage vs time in response to step function
 
     netlist = generateNetlistFromCompMatrix(componentMatrix)
-    response = simulateStepResponse(netlist, tStop, time_step)
+    response = simulateStepResponse(netlist, t_stop, dt)
+
+    return response
 
 def genComplexMatrix(componentMatrix,a):
-    inSize = npy.shape(componentMatrix)
-    complexMatrix = npy.zeros([inSize[0], inSize[1], 2])
+    inSize = np.shape(componentMatrix)
+    complexMatrix = np.zeros([inSize[0], inSize[1], 2])
     for row in range(inSize[0]):
         for col in range(inSize[1]):
             complexMatrix[row,col,:] = get2MatrixFromComponent(componentMatrix[row,col,:],a)
     return complexMatrix
 
-def genComponentMatrix(complexMatrix, a):
-    inSize = npy.shape(complexMatrix)
-    componentMatrix = npy.zeros([inSize[0], inSize[1], 3])
+def genComponentMatrix(complexMatrix, a=100):
+    inSize = np.shape(complexMatrix)
+    componentMatrix = np.zeros([inSize[0], inSize[1], 3])
     for row in range(inSize[0]):
         for col in range(inSize[1]):
             componentMatrix[row,col,:] = getComponentFrom2Matrix(complexMatrix[row,col,:],a)
     return componentMatrix
 
+
+# ---------------------------------------------------------------------------
 def getComponentFrom2Matrix(x,a):
     # scaling factor
     if(x[0] == 1):
-        R = npy.inf
+        R = np.inf
     else:
-        temp1 = a*npy.log((1+x[0])/(1-x[0]))
+        temp1 = a*np.log((1+x[0])/(1-x[0]))
         R = temp1
     if(x[1] == 0.5):
         L = 0
         C = 0
     elif(x[1] == 0):
-        L = npy.inf
+        L = np.inf
         C = 0
     elif(x[1] == 1):
-        L = npy.inf
+        L = np.inf
         C = 0
     else:
-        temp2 = a*npy.log(x[1]/(1-x[1]))
+        temp2 = a*np.log(x[1]/(1-x[1]))
         C = L = 0;
         if(temp2 > 0):
             L = temp2
             C = 0;
         elif(temp2 < 0):
             C = -1/temp2
-            L = npy.inf
+            L = np.inf
     return [R, C, L]
 
 def get2MatrixFromComponent(component,a):
@@ -61,23 +65,23 @@ def get2MatrixFromComponent(component,a):
     R = component[0]
     C = component[1]
     L = component[2]
-    if(C != 0 and L != npy.inf):
+    if(C != 0 and L != np.inf):
         # can't have both L and  C between nodes
         print("Can't have both L and C on the same node!!!")
-    if(R == npy.inf):
+    if(R == np.inf):
         x1 = 1
     else:
-        temp1 = npy.exp(R/a)
+        temp1 = np.exp(R/a)
         x1 = (temp1-1)/(temp1+1)
     temp2 = 0
-    if(C == 0 and L == npy.inf):
+    if(C == 0 and L == np.inf):
         x2 = 1;
     else:
-        if(C == 0 and L != npy.inf):
+        if(C == 0 and L != np.inf):
             temp2 = L
-        elif(C != 0 and L == npy.inf):
+        elif(C != 0 and L == np.inf):
             temp2 = -1/C
-        x2 = 1/(1+npy.exp(-temp2/a))
+        x2 = 1/(1+np.exp(-temp2/a))
     return [x1, x2]
 
 def generateNetlistFromCompMatrix(X):
@@ -86,23 +90,23 @@ def generateNetlistFromCompMatrix(X):
     netlist = ''
     for i in range(num_nets):
         for j in range(i+1,num_nets):
-            R = npy.real(X[i, j, 0])
-            C = npy.real(X[i, j, 1])
-            L = npy.real(X[i, j, 2])
+            R = np.real(X[i, j, 0])
+            C = np.real(X[i, j, 1])
+            L = np.real(X[i, j, 2])
             node1 = f'N{i+1}'
             if(j == num_nets-1):
                 node2 = '0'
             else:
                 node2 = f'N{j+1}'
-            if(C != 0 and L != npy.inf):
+            if(C != 0 and L != np.inf):
                 print("L and C cannot both be present!")
-            if(R != npy.inf):
+            if(R != np.inf):
                 component_name = f'R{i+1}{j+1}'
                 netlist += f"{component_name} {node1} {node2} {R}\n"
             if(C != 0):
                 component_name = f'C{i+1}{j+1}'
                 netlist += f"{component_name} {node1} {node2} {C*1e-6} 0 \n"
-            if(L != npy.inf):
+            if(L != np.inf):
                 component_name = f'L{i+1}{j+1}'
                 netlist += f"{component_name} {node1} {node2} {L*1e-6} 0 \n"
 
@@ -129,7 +133,7 @@ def simulateStepResponse(netlist, duration=1, time_step = 0.001):
     #circuit.set_end_time(duration)
     num_points = duration/time_step + 1;
     #circuit.set_num_samples(num_points)
-    timeEval = npy.linspace(0, duration, round(num_points))
+    timeEval = np.linspace(0, duration, round(num_points))
 
     # Perform the simulation
     response = circuit.sim(timeEval)  # 'N' refers to the node name
@@ -147,18 +151,19 @@ def simulateStepResponse(netlist, duration=1, time_step = 0.001):
     #plt.grid(True)
     #plt.show()
     return response.N2.v
+# ---------------------------------------------------------------------------
 
-testMatrix = npy.zeros((3,3,3))
-testMatrix[:,:,0] = npy.inf
-testMatrix[:,:,1] = 0
-testMatrix[:,:,2] = npy.inf
-testMatrix[0,1,:] = [10, 1, npy.inf]
-testMatrix[1,2,:] = [npy.inf, 0, 50]
+# testMatrix = np.zeros((3,3,3))
+# testMatrix[:,:,0] = np.inf
+# testMatrix[:,:,1] = 0
+# testMatrix[:,:,2] = np.inf
+# testMatrix[0,1,:] = [10, 1, np.inf]
+# testMatrix[1,2,:] = [np.inf, 0, 50]
 
-testMatrix2 = genComplexMatrix(testMatrix,100)
-testMatrix3 = genComponentMatrix(testMatrix2,100)
-print(testMatrix)
-print(testMatrix2)
-print(testMatrix3)
-#print(testMatrix)
-#simulateCircuitMatrix(testMatrix3, 1e-3, 1e-6);
+# testMatrix2 = genComplexMatrix(testMatrix,100)
+# testMatrix3 = genComponentMatrix(testMatrix2,100)
+# print(testMatrix)
+# print(testMatrix2)
+# print(testMatrix3)
+# #print(testMatrix)
+# #simulateCircuitMatrix(testMatrix3, 1e-3, 1e-6);
