@@ -8,6 +8,8 @@ import pickle
 import cProfile
 import pstats
 
+import threading
+
 
 from data_functions.simulateLinearCircuit import genComplexMatrix
 from data_functions.simulateLinearCircuit import genComponentMatrix
@@ -35,9 +37,10 @@ if not os.path.exists(directory):
 
 
 
-def main(n_samples):
-    start_time = time.time()
+def main(seed,n_samples=100):
+    np.random.seed(seed)
 
+    start_time = time.time()
     for i in range(n_samples):
         rint = np.random.randint(46000)
         component_matrix = gen_RCL_matrix(rint)
@@ -54,9 +57,9 @@ def main(n_samples):
 
         complex_matrix = genComplexMatrix(component_matrix, 300)
 
-        component_matrix_reverse = genComponentMatrix(complex_matrix, 300)
+        # component_matrix_reverse = genComponentMatrix(complex_matrix, 300)
 
-        check = component_matrix_reverse == component_matrix
+        # check = component_matrix_reverse == component_matrix
         # print(f"diff: {np.abs(component_matrix_reverse - component_matrix)}")
         # print(f"Check:\n {check}")
         # print(f"comp_reverse: {component_matrix_reverse}")
@@ -82,10 +85,27 @@ def main(n_samples):
     #plt.show()
 
 # ---------------------------------------------------------------------------
-seed = 0
-np.random.seed(0)
-n_samples = 100
-main(n_samples)
+
+num_threads = 4
+start_seed = 500
+
+# Start worker threads
+threads = []
+for i in range(num_threads):
+    seed_offset = 100
+    seed = start_seed + (seed_offset * i)
+    thread = threading.Thread(target=main, args=(seed,))
+    threads.append(thread)
+    thread.start()
+
+# Wait for all threads to complete
+for thread in threads:
+    thread.join()
+
+
+
+
+
 
 def print_contents(path):
     with open(path, "rb") as file:
