@@ -88,11 +88,12 @@ def main(seed,n_samples=200):
 
 num_threads = 4
 start_seed = 0
+n_samples = 200
 
 # Start worker threads
 threads = []
 for i in range(num_threads):
-    seed_offset = 100
+    seed_offset = n_samples
     seed = start_seed + (seed_offset * i)
     thread = threading.Thread(target=main, args=(seed,))
     threads.append(thread)
